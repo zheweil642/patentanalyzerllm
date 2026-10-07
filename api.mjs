@@ -1,4 +1,3 @@
-import {searchPatent} from './patents.mjs';
 import {providers,sharedSettings,identity,requireIdentity} from './access.mjs';
 export const criteria=[['subject','發明適格性','第21、24條'],['industry','產業利用性','第22條第1項'],['novelty','新穎性','第22、23條'],['inventive','進步性','第22條第2項'],['disclosure','充分揭露與可據以實現','第26條第1項'],['claims','請求項明確性與支持','第26條第2項'],['unity','單一性','第33條']];
 const law='https://law.moj.gov.tw/LawClass/LawAll.aspx?pcode=J0070007';
@@ -19,7 +18,7 @@ export async function handle(request,env={}){try{
  if(!request.headers.get('content-type')?.startsWith('application/json'))fail('請使用 JSON 請求。',415);
  requireIdentity(request,env);
  const raw=await request.text();if(raw.length>250000)fail('輸入內容過長，請縮短至 60,000 字內。',413);let b;try{b=JSON.parse(raw);}catch{fail('請求格式錯誤。');}if(!b||typeof b!=='object')fail('請求格式錯誤。');
- if(u.pathname==='/api/search')return json(await searchPatent(b.number));
+ if(u.pathname==='/api/search')return json({error:'自動讀取已停用，請前往 Google Patents 查詢。'},410);
  if(u.pathname!=='/api/review')return json({error:'找不到此功能。'},404);
  if(!['openai','claude','gemini','qwen'].includes(b.provider))fail('請選擇 AI 服務。');
  const shared=sharedSettings(env,b.provider);b.model=shared.model;if(!/^[a-zA-Z0-9][a-zA-Z0-9._:/-]{0,100}$/.test(b.model))fail('請填入有效的模型名稱。');
