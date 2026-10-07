@@ -4,6 +4,5 @@ export function providers(env){return ['qwen','openai','claude','gemini'].map(id
 export function sharedSettings(env,provider){const config=providers(env).find(p=>p.id===provider);if(!config?.ready)unavailable('此 AI 服務尚未由網站管理者啟用，請稍後再試。');let endpoint;
  if(provider==='qwen'){if(env.LOCAL_MODE==='true')endpoint='http://127.0.0.1:11434/v1/chat/completions';else {let u;try{u=new URL(env.QWEN_BASE_URL);}catch{unavailable('共用 Qwen 連線尚未設定完成。');}if(u.protocol!=='https:'||u.username||u.password||u.search||u.hash||/^(localhost|127\.|0\.|10\.|192\.168\.|169\.254\.|\[)/i.test(u.hostname))unavailable('共用 Qwen 連線設定不正確。');endpoint=u.href.replace(/\/$/,'')+'/chat/completions';}}
  return {model:config.model,key:env[providerKeys[provider]]||'',endpoint};}
-export function tipoSettings(env){if(!env.TIPO_API_USER||!env.TIPO_API_PASSWORD)unavailable('專利局查詢服務尚未啟用，請稍後再試；你不需要提供 API 帳密。');return {tipoUser:env.TIPO_API_USER,tipoPass:env.TIPO_API_PASSWORD};}
 export function identity(request,env){if(env.LOCAL_MODE==='true')return 'local-owner';return request.headers.get('oai-authenticated-user-id')&&request.headers.get('oai-authenticated-user-email')?request.headers.get('oai-authenticated-user-id'):null;}
 export function requireIdentity(request,env){const id=identity(request,env);if(!id)unavailable('請先使用 ChatGPT 登入，再使用查詢或分析。',401);return id;}
