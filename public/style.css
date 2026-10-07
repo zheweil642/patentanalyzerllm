@@ -4,3 +4,5 @@
 .account{display:flex;align-items:center;gap:14px;font-size:.8rem}.account a{text-decoration:none}.modelinfo{font-size:.875rem;margin:0 0 18px}.modelinfo span{display:block;color:var(--muted)}.modelinfo strong{display:block;margin-top:6px;overflow-wrap:anywhere}#serviceNotice{margin:0 0 24px} @media(max-width:600px){header{height:auto;min-height:72px;padding:14px 18px;flex-wrap:wrap}.account{flex-wrap:wrap}}
 
 .patenttext{border-top:1px solid var(--line);padding:16px 0}.patenttext:first-of-type{margin-top:20px}.patentcontent{white-space:pre-wrap;overflow-wrap:anywhere;max-height:420px;overflow:auto;font-size:.9rem;line-height:1.9;margin-top:15px;color:var(--muted)}
+
+.importhelp{border-top:1px solid var(--line);margin-top:22px;padding-top:18px}.importhelp label{margin:12px 0 4px}.lookupfallback{padding:24px;margin-top:24px}.lookupfallback h2{font-size:1.1rem}

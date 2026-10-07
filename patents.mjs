@@ -3,6 +3,15 @@ export function normalizePublication(value){let n=typeof value==='string'?value.
 function decodeEntities(text){return text.replace(/&(#x[0-9a-f]+|#\d+|amp|lt|gt|quot|apos|nbsp);/gi,(all,key)=>{if(key[0]==='#'){const n=key[1].toLowerCase()==='x'?parseInt(key.slice(2),16):parseInt(key.slice(1),10);return n>0&&n<=0x10ffff?String.fromCodePoint(n):all;}return {amp:'&',lt:'<',gt:'>',quot:'"',apos:"'",nbsp:' '}[key.toLowerCase()]||all;});}
 function textOnly(html){return decodeEntities(html.replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi,'').replace(/<h2\b[^>]*>[\s\S]*?<\/h2>/gi,'').replace(/<div\b[^>]*\bnum=["'](\d+)["'][^>]*>/gi,'\n$1. ').replace(/<\/(?:div|p|li|heading|invention-title)>|<br\s*\/?\s*>/gi,'\n').replace(/<[^>]+>/g,'')).replace(/[ \t]+/g,' ').replace(/ *\n */g,'\n').replace(/\n{3,}/g,'\n\n').trim();}
 function attributes(tag){const result={};for(const m of tag.matchAll(/([\w:-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g))result[m[1].toLowerCase()]=decodeEntities(m[2]??m[3]);return result;}
+export function importSavedPatent(html,expected=''){
+ if(typeof html!=='string'||new TextEncoder().encode(html).length>8*1024*1024)patentError('檔案過大，請使用 8 MB 以下的專利 HTML 網頁。');
+ const metadata=[...html.matchAll(/<meta\b[^>]*>/gi)].map(m=>attributes(m[0]));
+ const number=metadata.find(m=>m.name==='citation_patent_number')?.content?.replace(/:/g,'');
+ if(!number)patentError('這個檔案沒有 Google Patents 專利資料，請從專利詳細頁儲存 HTML 網頁。');
+ const publication=normalizePublication(number);
+ if(expected&&normalizePublication(expected)!==publication)patentError('匯入檔案的專利號與目前輸入不相符。請核對號碼，或清空查詢欄後重新匯入。');
+ const data=parsePatent(html,publication);data.imported=true;data.source='匯入的 Google Patents 網頁';data.warning='資料由你選取的 HTML 檔案匯入，未向原站驗證內容或更新日期。'+data.warning;return data;
+}
 function section(html,name){const m=html.match(new RegExp('<section\\b[^>]*itemprop=["\']'+name+'["\'][^>]*>([\\s\\S]*?)<\\/section>','i'));return m?textOnly(m[1]):'';}
 export function safePdfURL(raw,publication){try{const u=new URL(raw);return u.protocol==='https:'&&u.hostname==='patentimages.storage.googleapis.com'&&!u.port&&!u.username&&!u.password&&!u.search&&!u.hash&&u.pathname.endsWith('/'+publication+'.pdf')?u.href:null;}catch{return null;}}
 export function parsePatent(html,publication){const meta=[...html.matchAll(/<meta\b[^>]*>/gi)].map(m=>attributes(m[0]));const field=(name,scheme)=>meta.find(m=>m.name===name&&(!scheme||m.scheme===scheme))?.content?.trim()||'';const actual=field('citation_patent_number').replace(/:/g,'');if(actual!==publication)patentError('來源頁面未回傳相符的專利號，無法確認結果。請開啟原站核對。',502);
