@@ -1,20 +1,29 @@
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { handle } from './api.mjs';
+
 try {
   process.loadEnvFile(new URL('.env', import.meta.url));
 } catch (e) {
   if (e.code !== 'ENOENT') throw e;
 }
-const port = 8787;
+
+const isCloud = Boolean(process.env.RENDER || process.env.PORT);
+const host = process.env.HOST || (isCloud ? '0.0.0.0' : '127.0.0.1');
+const port = Number(process.env.PORT) || 8787;
+const isLocalMode = !isCloud && process.env.LOCAL_MODE !== 'false';
+
 http
   .createServer(async (req, res) => {
     try {
-      if (!['127.0.0.1:' + port, 'localhost:' + port].includes(req.headers.host)) {
+      if (
+        !isCloud &&
+        !['127.0.0.1:' + port, 'localhost:' + port].includes(req.headers.host)
+      ) {
         res.writeHead(403).end();
         return;
       }
-      const url = new URL(req.url, 'http://' + req.headers.host);
+      const url = new URL(req.url, 'http://' + (req.headers.host || `${host}:${port}`));
       if (url.pathname.startsWith('/api/')) {
         let chunks = [],
           size = 0;
@@ -31,8 +40,9 @@ http
           headers: req.headers,
           ...(req.method !== 'GET' && req.method !== 'HEAD' ? { body: Buffer.concat(chunks) } : {}),
         });
-        let r = await handle(request, { ...process.env, LOCAL_MODE: 'true' });
-        if (req.method === 'GET' && url.pathname === '/api/status') {
+        const env = isLocalMode ? { ...process.env, LOCAL_MODE: 'true' } : { ...process.env };
+        let r = await handle(request, env);
+        if (isLocalMode && req.method === 'GET' && url.pathname === '/api/status') {
           const status = await r.json();
           try {
             const health = await fetch('http://127.0.0.1:11434/api/tags', {
@@ -117,4 +127,4 @@ http
     }
     process.exitCode = 1;
   })
-  .listen(port, '127.0.0.1', () => console.log('Local: http://127.0.0.1:8787'));
+  .listen(port, host, () => console.log(`Server running at http://${host}:${port}`));
